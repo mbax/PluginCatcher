@@ -6,11 +6,17 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.*;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
+import net.minecraft.server.ChunkProviderServer;
 import net.minecraft.server.World;
+import net.minecraft.server.WorldServer;
 
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;
@@ -124,11 +130,23 @@ public class Plugin extends JavaPlugin {
             fieldPlayers.setAccessible(true);
             final Field fieldTileEntities = World.class.getDeclaredField("tileEntityList");
             fieldTileEntities.setAccessible(true);
+            final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
+            fieldUnloadQueue.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
                 final World world = ((CraftWorld) bworld).getHandle();
                 fieldEntities.set(world, new ArrayList((ArrayList) fieldEntities.get(world)));
                 fieldPlayers.set(world, new ArrayList((ArrayList) fieldPlayers.get(world)));
                 fieldTileEntities.set(world, new ArrayList((ArrayList) fieldTileEntities.get(world)));
+                final ChunkProviderServer server = ((WorldServer) world).chunkProviderServer;
+                final Object object = fieldUnloadQueue.get(server);
+                if (object instanceof LongHashSet) {
+                    final LongHashSet oldbie = (LongHashSet) object;
+                    final LongHashSet newbie = new LongHashSet(oldbie.size());
+                    LongHugSet.olBukkitSwitcharoo(oldbie, newbie);
+                    fieldUnloadQueue.set(server, newbie);
+                } else {
+                    SpigotDealer.disable(server);
+                }
             }
         } catch (final SecurityException e) {
             e.printStackTrace();
@@ -166,11 +184,20 @@ public class Plugin extends JavaPlugin {
             fieldPlayers.setAccessible(true);
             final Field fieldTileEntities = World.class.getDeclaredField("tileEntityList");
             fieldTileEntities.setAccessible(true);
+            final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
+            fieldUnloadQueue.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
                 final World world = ((CraftWorld) bworld).getHandle();
                 fieldEntities.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldEntities.get(world)));
                 fieldPlayers.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldPlayers.get(world)));
                 fieldTileEntities.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldTileEntities.get(world)));
+                final ChunkProviderServer server = ((WorldServer) world).chunkProviderServer;
+                final Object object = fieldUnloadQueue.get(server);
+                if (object instanceof LongHashSet) {
+                    fieldUnloadQueue.set(server, new LongHugSet((LongHashSet) object, this));
+                } else {
+                    SpigotDealer.enable(server, this);
+                }
             }
         } catch (final SecurityException e) {
             e.printStackTrace();
