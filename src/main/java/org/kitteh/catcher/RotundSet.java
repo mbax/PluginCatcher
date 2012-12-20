@@ -4,9 +4,9 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
 
-import org.bukkit.craftbukkit.util.FlatLookup;
-import org.bukkit.craftbukkit.util.FlatSet;
-import org.bukkit.craftbukkit.util.LongObjectHashMap;
+import org.bukkit.craftbukkit.v1_4_5.util.FlatLookup;
+import org.bukkit.craftbukkit.v1_4_5.util.FlatSet;
+import org.bukkit.craftbukkit.v1_4_5.util.LongObjectHashMap;
 
 public class RotundSet extends FlatSet {
 

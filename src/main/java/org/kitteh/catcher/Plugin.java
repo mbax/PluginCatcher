@@ -11,12 +11,12 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.minecraft.server.ChunkProviderServer;
-import net.minecraft.server.World;
-import net.minecraft.server.WorldServer;
+import net.minecraft.server.v1_4_5.ChunkProviderServer;
+import net.minecraft.server.v1_4_5.World;
+import net.minecraft.server.v1_4_5.WorldServer;
 
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.LongHashSet;
+import org.bukkit.craftbukkit.v1_4_5.CraftWorld;
+import org.bukkit.craftbukkit.v1_4_5.util.LongHashSet;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;

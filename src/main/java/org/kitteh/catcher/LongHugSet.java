@@ -19,8 +19,8 @@ package org.kitteh.catcher;
 import java.lang.reflect.Field;
 import java.util.Iterator;
 
-import org.bukkit.craftbukkit.util.LongHash;
-import org.bukkit.craftbukkit.util.LongHashSet;
+import org.bukkit.craftbukkit.v1_4_5.util.LongHash;
+import org.bukkit.craftbukkit.v1_4_5.util.LongHashSet;
 
 public class LongHugSet extends LongHashSet {
     //Ah, the...

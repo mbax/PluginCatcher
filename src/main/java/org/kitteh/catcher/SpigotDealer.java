@@ -2,9 +2,9 @@ package org.kitteh.catcher;
 
 import java.lang.reflect.Field;
 
-import net.minecraft.server.ChunkProviderServer;
+import net.minecraft.server.v1_4_5.ChunkProviderServer;
 
-import org.bukkit.craftbukkit.util.FlatSet;
+import org.bukkit.craftbukkit.v1_4_5.util.FlatSet;
 
 public class SpigotDealer {
     public static void disable(ChunkProviderServer server) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {

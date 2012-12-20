@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.util;
+package org.bukkit.craftbukkit.v1_4_5.util;
 
 import java.util.Iterator;
 

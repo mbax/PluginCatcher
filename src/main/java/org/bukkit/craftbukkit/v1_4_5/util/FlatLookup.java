@@ -1,6 +1,9 @@
-package org.bukkit.craftbukkit.util;
+package org.bukkit.craftbukkit.v1_4_5.util;
 
 import java.util.Collection;
+
+import org.bukkit.craftbukkit.v1_4_5.util.LongHash;
+import org.bukkit.craftbukkit.v1_4_5.util.LongObjectHashMap;
 
 @SuppressWarnings("unchecked")
 public class FlatLookup<E> {
