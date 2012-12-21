@@ -59,10 +59,9 @@ public class LongHugSet extends LongHashSet {
         return super.add(msw, lsw);
     }
 
-    @Override
     public boolean add(long value) {
         this.check();
-        return super.add(value);
+        return super.add(LongHash.msw(value), LongHash.lsw(value));
     }
 
     @Override
@@ -77,10 +76,9 @@ public class LongHugSet extends LongHashSet {
         return this.contains(LongHash.toLong(msw, lsw));
     }
 
-    @Override
     public boolean contains(long value) {
         this.check();
-        return super.contains(value);
+        return super.contains(LongHash.msw(value), LongHash.lsw(value));
     }
 
     @Override
@@ -114,10 +112,9 @@ public class LongHugSet extends LongHashSet {
         super.remove(msw, lsw);
     }
 
-    @Override
-    public boolean remove(long value) {
+    public void remove(long value) {
         this.check();
-        return super.remove(value);
+        super.remove(LongHash.msw(value), LongHash.lsw(value));
     }
 
     @Override
