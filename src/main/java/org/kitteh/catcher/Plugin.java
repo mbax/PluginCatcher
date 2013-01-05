@@ -5,24 +5,39 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_4_5.ChunkProviderServer;
-import net.minecraft.server.v1_4_5.World;
-import net.minecraft.server.v1_4_5.WorldServer;
+import net.minecraft.server.v1_4_6.ChunkProviderServer;
+import net.minecraft.server.v1_4_6.Entity;
+import net.minecraft.server.v1_4_6.EntityHuman;
+import net.minecraft.server.v1_4_6.EntityTracker;
+import net.minecraft.server.v1_4_6.EntityTrackerEntry;
+import net.minecraft.server.v1_4_6.TileEntity;
+import net.minecraft.server.v1_4_6.World;
+import net.minecraft.server.v1_4_6.WorldServer;
 
-import org.bukkit.craftbukkit.v1_4_5.CraftWorld;
-import org.bukkit.craftbukkit.v1_4_5.util.LongHashSet;
+import org.bukkit.craftbukkit.v1_4_6.CraftWorld;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;
 
-@SuppressWarnings({ "unchecked", "rawtypes" })
+@SuppressWarnings("unchecked")
 public class Plugin extends JavaPlugin {
+
+    public enum Badness {
+        VERY_BAD,
+        RISKY;
+    }
 
     private class Frmttr extends java.util.logging.Formatter {
         SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -50,11 +65,12 @@ public class Plugin extends JavaPlugin {
 
     private class Output implements Runnable {
 
+        private Map<String, PluginClassLoader> loaders;
+
         @Override
         public void run() {
-            Map<String, PluginClassLoader> loaders;
             try {
-                loaders = (Map<String, PluginClassLoader>) Plugin.this.jplLoaders.get(Plugin.this.getPluginLoader());
+                this.loaders = (Map<String, PluginClassLoader>) Plugin.this.jplLoaders.get(Plugin.this.getPluginLoader());
             } catch (final IllegalArgumentException e) {
                 e.printStackTrace();
                 return;
@@ -63,63 +79,80 @@ public class Plugin extends JavaPlugin {
                 return;
             }
             boolean found = false;
-            while (!Plugin.this.list.isEmpty()) {
+            while (!Plugin.this.badList.isEmpty()) {
                 found = true;
-                final Throwable t = Plugin.this.list.remove(0);
-                final String thisName = Plugin.this.getDescription().getName();
-                final Set<String> set = new HashSet<String>();
-                for (final String plugin : loaders.keySet()) {
-                    if (plugin.equals(thisName)) {
-                        continue;
-                    }
-                    final PluginClassLoader loader = loaders.get(plugin);
-                    Map<String, Class<?>> classes;
-                    try {
-                        classes = (Map<String, Class<?>>) Plugin.this.pclClasses.get(loader);
-                    } catch (final IllegalArgumentException e2) {
-                        e2.printStackTrace();
-                        return;
-                    } catch (final IllegalAccessException e2) {
-                        e2.printStackTrace();
-                        return;
-                    }
-                    for (final StackTraceElement e : t.getStackTrace()) {
-                        if (classes.containsKey(e.getClassName())) {
-                            set.add(plugin);
-                        }
-                    }
+                this.log(Plugin.this.badList.remove(0), "dangerous");
+            }
+            if (!Plugin.this.onlyDangerous) {
+                while (!Plugin.this.riskyList.isEmpty()) {
+                    found = true;
+                    this.log(Plugin.this.riskyList.remove(0), "risky");
                 }
-                String message;
-                if (set.isEmpty()) {
-                    message = "Found an async call I can't trace";
-                } else {
-                    final StringBuilder builder = new StringBuilder();
-                    builder.append("Found async call. Might be from: ");
-                    for (final String plugin : set) {
-                        final org.bukkit.plugin.Plugin p = Plugin.this.getServer().getPluginManager().getPlugin(plugin);
-                        builder.append(plugin);
-                        builder.append(" (");
-                        for (final String author : p.getDescription().getAuthors()) {
-                            builder.append(author).append(" ");
-                        }
-                        builder.append(") ");
-                    }
-                    message = builder.toString();
-                }
-                Plugin.this.logger.log(Level.WARNING, message, t);
             }
             if (found) {
                 Plugin.this.getLogger().severe("Found an async call. Check " + Plugin.this.asyncLogFile);
             }
         }
 
+        private void log(Throwable t, String desc) {
+            final Set<String> set = new HashSet<String>();
+            for (final String plugin : this.loaders.keySet()) {
+                if (plugin.equals(Plugin.this.thisName)) {
+                    continue;
+                }
+                final PluginClassLoader loader = this.loaders.get(plugin);
+                Map<String, Class<?>> classes;
+                try {
+                    classes = (Map<String, Class<?>>) Plugin.this.pclClasses.get(loader);
+                } catch (final Exception e) {
+                    return;
+                }
+                for (final StackTraceElement e : t.getStackTrace()) {
+                    if (classes.containsKey(e.getClassName())) {
+                        set.add(plugin);
+                    }
+                }
+            }
+            String message;
+            if (set.isEmpty()) {
+                message = "Found an async call I can't trace";
+            } else {
+                final StringBuilder builder = new StringBuilder();
+                builder.append("Found " + desc + " async call. Might be from: ");
+                for (final String plugin : set) {
+                    final org.bukkit.plugin.Plugin p = Plugin.this.getServer().getPluginManager().getPlugin(plugin);
+                    builder.append(plugin).append(" ").append(p.getDescription().getVersion());
+                    builder.append(" (");
+                    for (final String author : p.getDescription().getAuthors()) {
+                        builder.append(author).append(" ");
+                    }
+                    builder.append(") ");
+                }
+                message = builder.toString();
+            }
+            Plugin.this.logger.log(Level.WARNING, message, t);
+        }
     }
 
+    private String thisName;
     private Field jplLoaders;
     private Field pclClasses;
     private Logger logger;
     private File asyncLogFile;
-    public List<Throwable> list = Collections.synchronizedList(new ArrayList<Throwable>());
+    private final List<Throwable> riskyList = Collections.synchronizedList(new ArrayList<Throwable>());
+    private final List<Throwable> badList = Collections.synchronizedList(new ArrayList<Throwable>());
+    private boolean onlyDangerous;
+
+    public void add(Throwable throwable, Badness badness) {
+        switch (badness) {
+            case VERY_BAD:
+                this.badList.add(throwable);
+                break;
+            default:
+                this.riskyList.add(throwable);
+                break;
+        }
+    }
 
     @Override
     public void onDisable() {
@@ -132,35 +165,29 @@ public class Plugin extends JavaPlugin {
             fieldTileEntities.setAccessible(true);
             final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
             fieldUnloadQueue.setAccessible(true);
+            final Field fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
+            fieldEntityTrackerSet.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
                 final World world = ((CraftWorld) bworld).getHandle();
-                fieldEntities.set(world, new ArrayList((ArrayList) fieldEntities.get(world)));
-                fieldPlayers.set(world, new ArrayList((ArrayList) fieldPlayers.get(world)));
-                fieldTileEntities.set(world, new ArrayList((ArrayList) fieldTileEntities.get(world)));
-                final ChunkProviderServer server = ((WorldServer) world).chunkProviderServer;
-                final Object object = fieldUnloadQueue.get(server);
-                if (object instanceof LongHashSet) {
-                    final LongHashSet oldbie = (LongHashSet) object;
-                    final LongHashSet newbie = new LongHashSet(oldbie.size());
-                    LongHugSet.olBukkitSwitcharoo(oldbie, newbie);
-                    fieldUnloadQueue.set(server, newbie);
-                } else {
-                    SpigotDealer.disable(server);
-                }
+                fieldEntities.set(world, new ArrayList<Entity>((List<Entity>) fieldEntities.get(world)));
+                fieldPlayers.set(world, new ArrayList<EntityHuman>((List<EntityHuman>) fieldPlayers.get(world)));
+                fieldTileEntities.set(world, new ArrayList<TileEntity>((List<TileEntity>) fieldTileEntities.get(world)));
+                final EntityTracker tracker = ((WorldServer) world).tracker;
+                fieldEntityTrackerSet.set(tracker, new HashSet<EntityTrackerEntry>((Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
             }
-        } catch (final SecurityException e) {
-            e.printStackTrace();
-        } catch (final NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (final IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (final IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (final Exception e) {
+            this.getLogger().log(Level.SEVERE, "Failed to disable properly. Might want to shut down.", e);
         }
     }
 
     @Override
     public void onEnable() {
+        final File file = new File(this.getDataFolder(), "config.yml");
+        if (!file.exists()) {
+            this.saveDefaultConfig();
+        }
+        this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
+        this.thisName = this.getDescription().getName();
         this.logger = Logger.getLogger("PluginCatcher");
         this.getDataFolder().mkdir();
         this.asyncLogFile = new File(this.getDataFolder(), "async.log");
@@ -186,27 +213,18 @@ public class Plugin extends JavaPlugin {
             fieldTileEntities.setAccessible(true);
             final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
             fieldUnloadQueue.setAccessible(true);
+            final Field fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
+            fieldEntityTrackerSet.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
                 final World world = ((CraftWorld) bworld).getHandle();
-                fieldEntities.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldEntities.get(world)));
-                fieldPlayers.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldPlayers.get(world)));
-                fieldTileEntities.set(world, new OverlyAttachedArrayList(this, (ArrayList) fieldTileEntities.get(world)));
-                final ChunkProviderServer server = ((WorldServer) world).chunkProviderServer;
-                final Object object = fieldUnloadQueue.get(server);
-                if (object instanceof LongHashSet) {
-                    fieldUnloadQueue.set(server, new LongHugSet((LongHashSet) object, this));
-                } else {
-                    SpigotDealer.enable(server, this);
-                }
+                fieldEntities.set(world, new OverlyAttachedArrayList<Entity>(this, (List<Entity>) fieldEntities.get(world)));
+                fieldPlayers.set(world, new OverlyAttachedArrayList<EntityHuman>(this, (List<EntityHuman>) fieldPlayers.get(world)));
+                fieldTileEntities.set(world, new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) fieldTileEntities.get(world)));
+                final EntityTracker tracker = ((WorldServer) world).tracker;
+                fieldEntityTrackerSet.set(tracker, new HugSet<EntityTrackerEntry>(this, (Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
             }
-        } catch (final SecurityException e) {
-            e.printStackTrace();
-        } catch (final NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (final IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (final IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (final Exception e) {
+            this.getLogger().log(Level.SEVERE, "Failed to start up properly. Might want to shut down.", e);
         }
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Output(), 20, 20);
     }
