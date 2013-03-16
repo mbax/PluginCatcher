@@ -17,16 +17,16 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_4_R1.ChunkProviderServer;
-import net.minecraft.server.v1_4_R1.Entity;
-import net.minecraft.server.v1_4_R1.EntityHuman;
-import net.minecraft.server.v1_4_R1.EntityTracker;
-import net.minecraft.server.v1_4_R1.EntityTrackerEntry;
-import net.minecraft.server.v1_4_R1.TileEntity;
-import net.minecraft.server.v1_4_R1.World;
-import net.minecraft.server.v1_4_R1.WorldServer;
+import net.minecraft.server.v1_5_R1.ChunkProviderServer;
+import net.minecraft.server.v1_5_R1.Entity;
+import net.minecraft.server.v1_5_R1.EntityHuman;
+import net.minecraft.server.v1_5_R1.EntityTracker;
+import net.minecraft.server.v1_5_R1.EntityTrackerEntry;
+import net.minecraft.server.v1_5_R1.TileEntity;
+import net.minecraft.server.v1_5_R1.World;
+import net.minecraft.server.v1_5_R1.WorldServer;
 
-import org.bukkit.craftbukkit.v1_4_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_5_R1.CraftWorld;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;
