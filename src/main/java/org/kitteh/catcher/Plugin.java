@@ -214,6 +214,14 @@ public class Plugin extends JavaPlugin {
         if (!file.exists()) {
             this.saveDefaultConfig();
         }
+        if (this.getConfig().getBoolean("meow", true)) {
+            this.getLogger().info("             |\\__/,|   (`\\");
+            this.getLogger().info("             |o o  |__ _) )");
+            this.getLogger().info("           _.( T   )  `  /");
+            this.getLogger().info(" n n._    ((_ `^--' /_<  \\");
+            this.getLogger().info(" <\" _ }=- `` `-'(((/  (((/");
+            this.getLogger().info("  `\" \"");
+        }
         this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
         this.thisName = this.getDescription().getName();
         this.logger = Logger.getLogger("PluginCatcher");
