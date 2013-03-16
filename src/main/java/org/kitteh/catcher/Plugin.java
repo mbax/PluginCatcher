@@ -136,12 +136,7 @@ public class Plugin extends JavaPlugin {
                 builder.append("Found " + desc + " async call. Might be from: ");
                 for (final String plugin : set) {
                     final org.bukkit.plugin.Plugin p = Plugin.this.getServer().getPluginManager().getPlugin(plugin);
-                    builder.append(plugin).append(" ").append(p.getDescription().getVersion());
-                    builder.append(" (");
-                    for (final String author : p.getDescription().getAuthors()) {
-                        builder.append(author).append(" ");
-                    }
-                    builder.append(") ");
+                    builder.append(plugin).append(" ").append(p.getDescription().getVersion()).append(" ");
                 }
                 message = builder.toString();
             }
