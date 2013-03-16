@@ -4,11 +4,12 @@
   <groupId>org.kitteh</groupId>
   <artifactId>plugincatcher</artifactId>
   <packaging>jar</packaging>
-  <version>1.3.1.5</version>
+  <version>1.4-SNAPSHOT</version>
   <name>PluginCatcher</name>
   <url>http://kitteh.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <minecraft_version>v1_5_R1</minecraft_version>
   </properties>
 
   <repositories>
@@ -29,7 +30,13 @@
 
   <build>
     <finalName>plugincatcher</finalName>
+    <sourceDirectory>${basedir}/target/filtered-sources/java</sourceDirectory>
     <resources>
+      <resource>
+        <directory>${basedir}/src/main/java</directory>
+        <filtering>true</filtering>
+        <targetPath>${basedir}/target/filtered-sources/java</targetPath>
+      </resource>
       <resource>
         <targetPath>.</targetPath>
         <filtering>true</filtering>
@@ -39,6 +46,40 @@
           <include>config.yml</include>
         </includes>
       </resource>
+      <resource>
+        <targetPath>.</targetPath>
+        <directory>${basedir}</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
     </resources>
+    <plugins>
+      <plugin>
+        <groupId>com.mycila.maven-license-plugin</groupId>
+        <artifactId>maven-license-plugin</artifactId>
+        <version>1.10.b1</version>
+        <executions>
+          <execution>
+            <phase>clean</phase>
+            <goals>
+              <goal>format</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <quiet>true</quiet>
+          <encoding>UTF-8</encoding>
+          <strictCheck>true</strictCheck>
+          <header>LICENSE</header>
+          <mapping>
+            <java>SLASHSTAR_STYLE</java>
+          </mapping>
+          <includes>
+            <include>src/main/java/org/kitteh/**</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
