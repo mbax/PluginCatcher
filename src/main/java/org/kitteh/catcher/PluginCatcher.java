@@ -42,12 +42,13 @@ import net.minecraft.server.v1_5_R1.World;
 import net.minecraft.server.v1_5_R1.WorldServer;
 
 import org.bukkit.craftbukkit.v1_5_R1.CraftWorld;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;
 
 @SuppressWarnings("unchecked")
-public class Plugin extends JavaPlugin {
+public class PluginCatcher extends JavaPlugin {
 
     public enum Badness {
         VERY_BAD,
@@ -85,7 +86,7 @@ public class Plugin extends JavaPlugin {
         @Override
         public void run() {
             try {
-                this.loaders = (Map<String, PluginClassLoader>) Plugin.this.jplLoaders.get(Plugin.this.getPluginLoader());
+                this.loaders = (Map<String, PluginClassLoader>) PluginCatcher.this.jplLoaders.get(PluginCatcher.this.getPluginLoader());
             } catch (final IllegalArgumentException e) {
                 e.printStackTrace();
                 return;
@@ -94,31 +95,31 @@ public class Plugin extends JavaPlugin {
                 return;
             }
             boolean found = false;
-            while (!Plugin.this.badList.isEmpty()) {
+            while (!PluginCatcher.this.badList.isEmpty()) {
                 found = true;
-                this.log(Plugin.this.badList.remove(0), "dangerous");
+                this.log(PluginCatcher.this.badList.remove(0), "dangerous");
             }
-            if (!Plugin.this.onlyDangerous) {
-                while (!Plugin.this.riskyList.isEmpty()) {
+            if (!PluginCatcher.this.onlyDangerous) {
+                while (!PluginCatcher.this.riskyList.isEmpty()) {
                     found = true;
-                    this.log(Plugin.this.riskyList.remove(0), "risky");
+                    this.log(PluginCatcher.this.riskyList.remove(0), "risky");
                 }
             }
             if (found) {
-                Plugin.this.getLogger().severe("Found an async call. Check " + Plugin.this.asyncLogFile);
+                PluginCatcher.this.getLogger().severe("Found an async call. Check " + PluginCatcher.this.asyncLogFile);
             }
         }
 
         private void log(Throwable t, String desc) {
             final Set<String> set = new HashSet<String>();
             for (final String plugin : this.loaders.keySet()) {
-                if (plugin.equals(Plugin.this.thisName)) {
+                if (plugin.equals(PluginCatcher.this.thisName)) {
                     continue;
                 }
                 final PluginClassLoader loader = this.loaders.get(plugin);
                 Map<String, Class<?>> classes;
                 try {
-                    classes = (Map<String, Class<?>>) Plugin.this.pclClasses.get(loader);
+                    classes = (Map<String, Class<?>>) PluginCatcher.this.pclClasses.get(loader);
                 } catch (final Exception e) {
                     return;
                 }
@@ -135,12 +136,12 @@ public class Plugin extends JavaPlugin {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("Found " + desc + " async call. Might be from: ");
                 for (final String plugin : set) {
-                    final org.bukkit.plugin.Plugin p = Plugin.this.getServer().getPluginManager().getPlugin(plugin);
+                    final Plugin p = PluginCatcher.this.getServer().getPluginManager().getPlugin(plugin);
                     builder.append(plugin).append(" ").append(p.getDescription().getVersion()).append(" ");
                 }
                 message = builder.toString();
             }
-            Plugin.this.logger.log(Level.WARNING, message, t);
+            PluginCatcher.this.logger.log(Level.WARNING, message, t);
         }
     }
 

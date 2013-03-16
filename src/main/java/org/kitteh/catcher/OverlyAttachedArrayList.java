@@ -21,14 +21,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.kitteh.catcher.Plugin.Badness;
+import org.kitteh.catcher.PluginCatcher.Badness;
 
 public class OverlyAttachedArrayList<E> extends ArrayList<E> {
     private static final long serialVersionUID = 4671186665144729042L;
     private final Thread thread;
-    private final Plugin plugin;
+    private final PluginCatcher plugin;
 
-    public OverlyAttachedArrayList(Plugin plugin, List<E> list) {
+    public OverlyAttachedArrayList(PluginCatcher plugin, List<E> list) {
         super(list);
         this.plugin = plugin;
         this.thread = Thread.currentThread();

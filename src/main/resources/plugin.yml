@@ -1,5 +1,5 @@
 name: PluginCatcher
-main: org.kitteh.catcher.Plugin
+main: org.kitteh.catcher.PluginCatcher
 author: mbaxter
 description: Catch derps
 version: '${project.version} for ${minecraft_version}'

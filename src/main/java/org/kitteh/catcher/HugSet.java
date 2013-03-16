@@ -19,15 +19,15 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.kitteh.catcher.Plugin.Badness;
+import org.kitteh.catcher.PluginCatcher.Badness;
 
 public class HugSet<E> extends HashSet<E> {
     private static final long serialVersionUID = 2781726251854737364L;
 
     private final Thread thread;
-    private final Plugin plugin;
+    private final PluginCatcher plugin;
 
-    public HugSet(Plugin plugin, Collection<E> list) {
+    public HugSet(PluginCatcher plugin, Collection<E> list) {
         super(list);
         this.plugin = plugin;
         this.thread = Thread.currentThread();
