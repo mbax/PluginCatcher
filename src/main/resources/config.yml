@@ -4,7 +4,7 @@
 # Settings documentation:
 #
 # onlydangerous
-#   Leave this untouched unless a developer or instructed to change this
+#   Leave this untouched unless you are a developer or instructed to change this
 #   If true (default), displays issues that could lead to a server-crashing ConcurrentModificationException
 #   If false (spammy), displays the above PLUS things that could be bad for the async thread.
 #
