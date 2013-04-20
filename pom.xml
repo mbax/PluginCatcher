@@ -4,7 +4,7 @@
   <groupId>org.kitteh</groupId>
   <artifactId>plugincatcher</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.1</version>
+  <version>1.5</version>
   <name>PluginCatcher</name>
   <url>http://kitteh.org</url>
   <properties>
@@ -23,7 +23,7 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.5.1-R0.1</version>
+      <version>1.5.1-R0.2</version>
       <type>jar</type>
     </dependency>
   </dependencies>

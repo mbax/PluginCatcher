@@ -186,7 +186,13 @@ public class PluginCatcher extends JavaPlugin {
                 final World world = ((CraftWorld) bworld).getHandle();
                 fieldEntities.set(world, new ArrayList<Entity>((List<Entity>) fieldEntities.get(world)));
                 fieldPlayers.set(world, new ArrayList<EntityHuman>((List<EntityHuman>) fieldPlayers.get(world)));
-                fieldTileEntities.set(world, new ArrayList<TileEntity>((List<TileEntity>) fieldTileEntities.get(world)));
+                Object o = fieldTileEntities.get(world);
+                if (o instanceof List) {
+                    o = new ArrayList<TileEntity>((List<TileEntity>) o);
+                } else {
+                    o = new HashSet<TileEntity>((Set<TileEntity>) o);
+                }
+                fieldTileEntities.set(world, o);
                 final EntityTracker tracker = ((WorldServer) world).tracker;
                 fieldEntityTrackerSet.set(tracker, new HashSet<EntityTrackerEntry>((Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
             }
@@ -251,7 +257,13 @@ public class PluginCatcher extends JavaPlugin {
                 final World world = ((CraftWorld) bworld).getHandle();
                 fieldEntities.set(world, new OverlyAttachedArrayList<Entity>(this, (List<Entity>) fieldEntities.get(world)));
                 fieldPlayers.set(world, new OverlyAttachedArrayList<EntityHuman>(this, (List<EntityHuman>) fieldPlayers.get(world)));
-                fieldTileEntities.set(world, new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) fieldTileEntities.get(world)));
+                Object o = fieldTileEntities.get(world);
+                if (o instanceof List) {
+                    o = new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) o);
+                } else {
+                    o = new HugSet<TileEntity>(this, (Set<TileEntity>) o);
+                }
+                fieldTileEntities.set(world, o);
                 final EntityTracker tracker = ((WorldServer) world).tracker;
                 fieldEntityTrackerSet.set(tracker, new HugSet<EntityTrackerEntry>(this, (Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
             }
