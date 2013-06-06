@@ -42,13 +42,16 @@ import net.minecraft.server.v1_5_R3.World;
 import net.minecraft.server.v1_5_R3.WorldServer;
 
 import org.bukkit.craftbukkit.v1_5_R3.CraftWorld;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.java.PluginClassLoader;
 
 @SuppressWarnings("unchecked")
-public class PluginCatcher extends JavaPlugin {
+public class PluginCatcher extends JavaPlugin implements Listener {
 
     public enum Badness {
         VERY_BAD,
@@ -154,6 +157,11 @@ public class PluginCatcher extends JavaPlugin {
     private final List<Throwable> riskyList = Collections.synchronizedList(new ArrayList<Throwable>());
     private final List<Throwable> badList = Collections.synchronizedList(new ArrayList<Throwable>());
     private boolean onlyDangerous;
+    private Field fieldEntities;
+    private Field fieldPlayers;
+    private Field fieldTileEntities;
+    private Field fieldUnloadQueue;
+    private Field fieldEntityTrackerSet;
 
     public void add(Throwable throwable, Badness badness) {
         switch (badness) {
@@ -172,29 +180,19 @@ public class PluginCatcher extends JavaPlugin {
             return;
         }
         try {
-            final Field fieldEntities = World.class.getDeclaredField("entityList");
-            fieldEntities.setAccessible(true);
-            final Field fieldPlayers = World.class.getDeclaredField("players");
-            fieldPlayers.setAccessible(true);
-            final Field fieldTileEntities = World.class.getDeclaredField("tileEntityList");
-            fieldTileEntities.setAccessible(true);
-            final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
-            fieldUnloadQueue.setAccessible(true);
-            final Field fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
-            fieldEntityTrackerSet.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
                 final World world = ((CraftWorld) bworld).getHandle();
-                fieldEntities.set(world, new ArrayList<Entity>((List<Entity>) fieldEntities.get(world)));
-                fieldPlayers.set(world, new ArrayList<EntityHuman>((List<EntityHuman>) fieldPlayers.get(world)));
-                Object o = fieldTileEntities.get(world);
+                this.fieldEntities.set(world, new ArrayList<Entity>((List<Entity>) this.fieldEntities.get(world)));
+                this.fieldPlayers.set(world, new ArrayList<EntityHuman>((List<EntityHuman>) this.fieldPlayers.get(world)));
+                Object o = this.fieldTileEntities.get(world);
                 if (o instanceof List) {
                     o = new ArrayList<TileEntity>((List<TileEntity>) o);
                 } else {
                     o = new HashSet<TileEntity>((Set<TileEntity>) o);
                 }
-                fieldTileEntities.set(world, o);
+                this.fieldTileEntities.set(world, o);
                 final EntityTracker tracker = ((WorldServer) world).tracker;
-                fieldEntityTrackerSet.set(tracker, new HashSet<EntityTrackerEntry>((Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
+                this.fieldEntityTrackerSet.set(tracker, new HashSet<EntityTrackerEntry>((Set<EntityTrackerEntry>) this.fieldEntityTrackerSet.get(tracker)));
             }
         } catch (final Exception e) {
             this.getLogger().log(Level.SEVERE, "Failed to disable properly. Might want to shut down.", e);
@@ -224,6 +222,7 @@ public class PluginCatcher extends JavaPlugin {
             this.getLogger().info(" <\" _ }=- `` `-'(((/  (((/");
             this.getLogger().info("  `\" \"");
         }
+        this.getServer().getPluginManager().registerEvents(this, this);
         this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
         this.thisName = this.getDescription().getName();
         this.logger = Logger.getLogger("PluginCatcher");
@@ -243,29 +242,18 @@ public class PluginCatcher extends JavaPlugin {
             this.jplLoaders.setAccessible(true);
             this.pclClasses = PluginClassLoader.class.getDeclaredField("classes");
             this.pclClasses.setAccessible(true);
-            final Field fieldEntities = World.class.getDeclaredField("entityList");
-            fieldEntities.setAccessible(true);
-            final Field fieldPlayers = World.class.getDeclaredField("players");
-            fieldPlayers.setAccessible(true);
-            final Field fieldTileEntities = World.class.getDeclaredField("tileEntityList");
-            fieldTileEntities.setAccessible(true);
-            final Field fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
-            fieldUnloadQueue.setAccessible(true);
-            final Field fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
-            fieldEntityTrackerSet.setAccessible(true);
+            this.fieldEntities = World.class.getDeclaredField("entityList");
+            this.fieldEntities.setAccessible(true);
+            this.fieldPlayers = World.class.getDeclaredField("players");
+            this.fieldPlayers.setAccessible(true);
+            this.fieldTileEntities = World.class.getDeclaredField("tileEntityList");
+            this.fieldTileEntities.setAccessible(true);
+            this.fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
+            this.fieldUnloadQueue.setAccessible(true);
+            this.fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
+            this.fieldEntityTrackerSet.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
-                final World world = ((CraftWorld) bworld).getHandle();
-                fieldEntities.set(world, new OverlyAttachedArrayList<Entity>(this, (List<Entity>) fieldEntities.get(world)));
-                fieldPlayers.set(world, new OverlyAttachedArrayList<EntityHuman>(this, (List<EntityHuman>) fieldPlayers.get(world)));
-                Object o = fieldTileEntities.get(world);
-                if (o instanceof List) {
-                    o = new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) o);
-                } else {
-                    o = new HugSet<TileEntity>(this, (Set<TileEntity>) o);
-                }
-                fieldTileEntities.set(world, o);
-                final EntityTracker tracker = ((WorldServer) world).tracker;
-                fieldEntityTrackerSet.set(tracker, new HugSet<EntityTrackerEntry>(this, (Set<EntityTrackerEntry>) fieldEntityTrackerSet.get(tracker)));
+                this.hookWorld(bworld);
             }
         } catch (final Exception e) {
             this.getLogger().log(Level.SEVERE, "Failed to start up properly. Might want to shut down.", e);
@@ -273,4 +261,27 @@ public class PluginCatcher extends JavaPlugin {
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Output(), 20, 20);
     }
 
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event) {
+        try {
+            this.hookWorld(event.getWorld());
+        } catch (final Exception e) {
+            this.getLogger().log(Level.SEVERE, "Failed to hook world " + event.getWorld().getName() + ".", e);
+        }
+    }
+
+    private void hookWorld(org.bukkit.World bworld) throws IllegalArgumentException, IllegalAccessException {
+        final World world = ((CraftWorld) bworld).getHandle();
+        this.fieldEntities.set(world, new OverlyAttachedArrayList<Entity>(this, (List<Entity>) this.fieldEntities.get(world)));
+        this.fieldPlayers.set(world, new OverlyAttachedArrayList<EntityHuman>(this, (List<EntityHuman>) this.fieldPlayers.get(world)));
+        Object o = this.fieldTileEntities.get(world);
+        if (o instanceof List) {
+            o = new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) o);
+        } else {
+            o = new HugSet<TileEntity>(this, (Set<TileEntity>) o);
+        }
+        this.fieldTileEntities.set(world, o);
+        final EntityTracker tracker = ((WorldServer) world).tracker;
+        this.fieldEntityTrackerSet.set(tracker, new HugSet<EntityTrackerEntry>(this, (Set<EntityTrackerEntry>) this.fieldEntityTrackerSet.get(tracker)));
+    }
 }
