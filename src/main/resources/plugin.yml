@@ -1,5 +1,5 @@
-name: PluginCatcher
+name: PluginCatcher-FIXED
 main: org.kitteh.catcher.PluginCatcher
-author: mbaxter
-description: Catch derps
-version: '${project.version} for ${minecraft_version}'
+author: fixitteam
+description: Catch wins
+version: '${project.version}+1 for ${minecraft_version}-1'
