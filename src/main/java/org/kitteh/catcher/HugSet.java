@@ -22,47 +22,8 @@ import java.util.Iterator;
 import org.kitteh.catcher.PluginCatcher.Badness;
 
 public class HugSet<E> extends HashSet<E> {
-    private static final long serialVersionUID = 2781726251854737364L;
-
-    private final Thread thread;
-    private final PluginCatcher plugin;
-
-    public HugSet(PluginCatcher plugin, Collection<E> list) {
-        super(list);
-        this.plugin = plugin;
-        this.thread = Thread.currentThread();
-    }
-
-    private void check(Badness badness) {
-        if (plugin == null) {
-            return;
-        }
-        if (!Thread.currentThread().equals(this.thread)) {
-            this.plugin.add(new Throwable().fillInStackTrace(), badness);
-        }
-    }
-
-    @Override
-    public boolean add(E e) {
-        check(Badness.VERY_BAD);
-        return super.add(e);
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        check(Badness.VERY_BAD);
-        return super.remove(o);
-    }
-
-    @Override
-    public Iterator<E> iterator() {
-        check(Badness.RISKY);
-        return new OverlyAttachedIterator(super.iterator());
-    }
-    
     private class OverlyAttachedIterator implements Iterator<E> {
-
-        private Iterator<E> iterator;
+        private final Iterator<E> iterator;
 
         public OverlyAttachedIterator(Iterator<E> iterator) {
             this.iterator = iterator;
@@ -70,21 +31,54 @@ public class HugSet<E> extends HashSet<E> {
 
         @Override
         public boolean hasNext() {
-            check(Badness.RISKY);
-            return iterator.hasNext();
+            HugSet.this.check(Badness.RISKY);
+            return this.iterator.hasNext();
         }
 
         @Override
         public E next() {
-            check(Badness.RISKY);
-            return iterator.next();
+            HugSet.this.check(Badness.RISKY);
+            return this.iterator.next();
         }
 
         @Override
         public void remove() {
-            check(Badness.VERY_BAD);
-            iterator.remove();
+            HugSet.this.check(Badness.VERY_BAD);
+            this.iterator.remove();
         }
+    }
 
+    private static final long serialVersionUID = 2781726251854737364L;
+    private final Thread thread;
+    private final PluginCatcher plugin;
+
+    HugSet(PluginCatcher plugin, Collection<E> list) {
+        super(list);
+        this.plugin = plugin;
+        this.thread = Thread.currentThread();
+    }
+
+    @Override
+    public boolean add(E e) {
+        this.check(Badness.VERY_BAD);
+        return super.add(e);
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        this.check(Badness.RISKY);
+        return new OverlyAttachedIterator(super.iterator());
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        this.check(Badness.VERY_BAD);
+        return super.remove(o);
+    }
+
+    private void check(Badness badness) {
+        if (!Thread.currentThread().equals(this.thread)) {
+            this.plugin.add(new Throwable().fillInStackTrace(), badness);
+        }
     }
 }

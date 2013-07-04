@@ -32,16 +32,15 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_5_R3.ChunkProviderServer;
-import net.minecraft.server.v1_5_R3.Entity;
-import net.minecraft.server.v1_5_R3.EntityHuman;
-import net.minecraft.server.v1_5_R3.EntityTracker;
-import net.minecraft.server.v1_5_R3.EntityTrackerEntry;
-import net.minecraft.server.v1_5_R3.TileEntity;
-import net.minecraft.server.v1_5_R3.World;
-import net.minecraft.server.v1_5_R3.WorldServer;
+import net.minecraft.server.v1_6_R1.Entity;
+import net.minecraft.server.v1_6_R1.EntityHuman;
+import net.minecraft.server.v1_6_R1.EntityTracker;
+import net.minecraft.server.v1_6_R1.EntityTrackerEntry;
+import net.minecraft.server.v1_6_R1.TileEntity;
+import net.minecraft.server.v1_6_R1.World;
+import net.minecraft.server.v1_6_R1.WorldServer;
 
-import org.bukkit.craftbukkit.v1_5_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_6_R1.CraftWorld;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -52,7 +51,6 @@ import org.bukkit.plugin.java.PluginClassLoader;
 
 @SuppressWarnings("unchecked")
 public class PluginCatcher extends JavaPlugin implements Listener {
-
     public enum Badness {
         VERY_BAD,
         RISKY;
@@ -83,7 +81,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     }
 
     private class Output implements Runnable {
-
         private Map<String, PluginClassLoader> loaders;
 
         @Override
@@ -160,7 +157,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     private Field fieldEntities;
     private Field fieldPlayers;
     private Field fieldTileEntities;
-    private Field fieldUnloadQueue;
     private Field fieldEntityTrackerSet;
 
     public void add(Throwable throwable, Badness badness) {
@@ -234,8 +230,9 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.logger.addHandler(handler);
             this.logger.setUseParentHandlers(false);
         } catch (final Exception e) {
-            e.printStackTrace();
             this.logger = this.getLogger();
+            this.logger.severe("Could not load custom log. Reverting to server.log");
+            e.printStackTrace();
         }
         try {
             this.jplLoaders = JavaPluginLoader.class.getDeclaredField("loaders");
@@ -248,8 +245,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.fieldPlayers.setAccessible(true);
             this.fieldTileEntities = World.class.getDeclaredField("tileEntityList");
             this.fieldTileEntities.setAccessible(true);
-            this.fieldUnloadQueue = ChunkProviderServer.class.getDeclaredField("unloadQueue");
-            this.fieldUnloadQueue.setAccessible(true);
             this.fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
             this.fieldEntityTrackerSet.setAccessible(true);
             for (final org.bukkit.World bworld : this.getServer().getWorlds()) {

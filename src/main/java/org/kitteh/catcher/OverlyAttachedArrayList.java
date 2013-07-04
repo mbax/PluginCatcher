@@ -24,26 +24,114 @@ import java.util.ListIterator;
 import org.kitteh.catcher.PluginCatcher.Badness;
 
 public class OverlyAttachedArrayList<E> extends ArrayList<E> {
+    private class OverlyAttachedIterator implements Iterator<E> {
+        private final Iterator<E> iterator;
+
+        public OverlyAttachedIterator(Iterator<E> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.hasNext();
+        }
+
+        @Override
+        public E next() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.next();
+        }
+
+        @Override
+        public void remove() {
+            OverlyAttachedArrayList.this.check(Badness.VERY_BAD);
+            this.iterator.remove();
+        }
+    }
+
+    private class OverlyAttachedListIterator implements ListIterator<E> {
+        private final ListIterator<E> iterator;
+
+        public OverlyAttachedListIterator(ListIterator<E> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public void add(E e) {
+            OverlyAttachedArrayList.this.check(Badness.VERY_BAD);
+            this.iterator.add(e);
+        }
+
+        @Override
+        public boolean hasNext() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.hasNext();
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.hasPrevious();
+        }
+
+        @Override
+        public E next() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.next();
+        }
+
+        @Override
+        public int nextIndex() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.nextIndex();
+        }
+
+        @Override
+        public E previous() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.previous();
+        }
+
+        @Override
+        public int previousIndex() {
+            OverlyAttachedArrayList.this.check(Badness.RISKY);
+            return this.iterator.previousIndex();
+        }
+
+        @Override
+        public void remove() {
+            OverlyAttachedArrayList.this.check(Badness.VERY_BAD);
+            this.iterator.remove();
+        }
+
+        @Override
+        public void set(E e) {
+            OverlyAttachedArrayList.this.check(Badness.VERY_BAD);
+            this.iterator.set(e);
+        }
+    }
+
     private static final long serialVersionUID = 4671186665144729042L;
     private final Thread thread;
     private final PluginCatcher plugin;
 
-    public OverlyAttachedArrayList(PluginCatcher plugin, List<E> list) {
+    OverlyAttachedArrayList(PluginCatcher plugin, List<E> list) {
         super(list);
         this.plugin = plugin;
         this.thread = Thread.currentThread();
     }
 
     @Override
-    public void add(int index, E element) {
-        this.check(Badness.VERY_BAD);
-        super.add(index, element);
-    }
-
-    @Override
     public boolean add(E e) {
         this.check(Badness.VERY_BAD);
         return super.add(e);
+    }
+
+    @Override
+    public void add(int index, E element) {
+        this.check(Badness.VERY_BAD);
+        super.add(index, element);
     }
 
     @Override
@@ -171,97 +259,4 @@ public class OverlyAttachedArrayList<E> extends ArrayList<E> {
             this.plugin.add(new Throwable().fillInStackTrace(), badness);
         }
     }
-
-    private class OverlyAttachedIterator implements Iterator<E> {
-
-        private Iterator<E> iterator;
-
-        public OverlyAttachedIterator(Iterator<E> iterator) {
-            this.iterator = iterator;
-        }
-
-        @Override
-        public boolean hasNext() {
-            check(Badness.RISKY);
-            return iterator.hasNext();
-        }
-
-        @Override
-        public E next() {
-            check(Badness.RISKY);
-            return iterator.next();
-        }
-
-        @Override
-        public void remove() {
-            check(Badness.VERY_BAD);
-            iterator.remove();
-        }
-
-    }
-
-    private class OverlyAttachedListIterator implements ListIterator<E> {
-
-        private ListIterator<E> iterator;
-
-        public OverlyAttachedListIterator(ListIterator<E> iterator) {
-            this.iterator = iterator;
-        }
-
-        @Override
-        public void add(E e) {
-            check(Badness.VERY_BAD);
-            iterator.add(e);
-        }
-
-        @Override
-        public boolean hasNext() {
-            check(Badness.RISKY);
-            return iterator.hasNext();
-        }
-
-        @Override
-        public boolean hasPrevious() {
-            check(Badness.RISKY);
-            return iterator.hasPrevious();
-        }
-
-        @Override
-        public E next() {
-            check(Badness.RISKY);
-            return iterator.next();
-        }
-
-        @Override
-        public int nextIndex() {
-            check(Badness.RISKY);
-            return iterator.nextIndex();
-        }
-
-        @Override
-        public E previous() {
-            check(Badness.RISKY);
-            return iterator.previous();
-        }
-
-        @Override
-        public int previousIndex() {
-            check(Badness.RISKY);
-            return iterator.previousIndex();
-        }
-
-        @Override
-        public void remove() {
-            check(Badness.VERY_BAD);
-            iterator.remove();
-        }
-
-        @Override
-        public void set(E e) {
-            check(Badness.VERY_BAD);
-            iterator.set(e);
-        }
-
-    }
-
 }
