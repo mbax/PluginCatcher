@@ -4,12 +4,12 @@
   <groupId>org.kitteh</groupId>
   <artifactId>plugincatcher</artifactId>
   <packaging>jar</packaging>
-  <version>1.6.0</version>
+  <version>1.6.2</version>
   <name>PluginCatcher</name>
   <url>http://kitteh.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <minecraft_version>v1_6_R1</minecraft_version>
+    <minecraft_version>v1_6_R2</minecraft_version>
   </properties>
 
   <repositories>
@@ -23,7 +23,7 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.6.1-R0.1-SNAPSHOT</version>
+      <version>1.6.2-R0.1-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
   </dependencies>
