@@ -193,7 +193,8 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     public void onEnable() {
         final String packageName = this.getServer().getClass().getPackage().getName();
         final String version = packageName.substring(packageName.lastIndexOf('.') + 1);
-        this.supportedVersion = "${minecraft_version}";
+        this.reflectionConfig = YamlConfiguration.loadConfiguration(this.getResource("reflection.yml"));
+        this.supportedVersion = reflectionConfig.getString("version");
         if (!version.equals(this.supportedVersion)) {
             this.getLogger().severe("Incompatible versions. Supports " + this.supportedVersion + ", found " + version);
             this.failed = true;
@@ -228,7 +229,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.logger.severe("Could not load custom log. Reverting to server.log");
             e.printStackTrace();
         }
-        this.reflectionConfig = YamlConfiguration.loadConfiguration(this.getResource("reflection.yml"));
         try {
             this.jplLoaders = JavaPluginLoader.class.getDeclaredField("loaders");
             this.jplLoaders.setAccessible(true);
