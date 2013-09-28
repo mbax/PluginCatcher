@@ -1,0 +1,10 @@
+version: ${minecraft_version}
+world:
+  nms: net.minecraft.server.@.World
+  fields: [entityList, players, tileEntityList]
+  server: net.minecraft.server.@.WorldServer
+  tracker:
+    field: tracker
+    nms: net.minecraft.server.@.EntityTracker
+    fields: [b]
+    

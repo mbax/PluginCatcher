@@ -19,10 +19,13 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +35,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_6_R3.Entity;
-import net.minecraft.server.v1_6_R3.EntityHuman;
-import net.minecraft.server.v1_6_R3.EntityTracker;
-import net.minecraft.server.v1_6_R3.EntityTrackerEntry;
-import net.minecraft.server.v1_6_R3.TileEntity;
-import net.minecraft.server.v1_6_R3.World;
-import net.minecraft.server.v1_6_R3.WorldServer;
-
-import org.bukkit.craftbukkit.v1_6_R3.CraftWorld;
+import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -154,10 +150,16 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     private final List<Throwable> riskyList = Collections.synchronizedList(new ArrayList<Throwable>());
     private final List<Throwable> badList = Collections.synchronizedList(new ArrayList<Throwable>());
     private boolean onlyDangerous;
-    private Field fieldEntities;
-    private Field fieldPlayers;
-    private Field fieldTileEntities;
-    private Field fieldEntityTrackerSet;
+    private Class<?> classCraftWorld;
+    private Class<?> classWorld;
+    private Method methodGetHandle;
+    private YamlConfiguration reflectionConfig;
+    private CharSequence supportedVersion;
+    private Field fieldTracker;
+
+    private Map<Class<?>, Set<Field>> worldFields;
+
+    private Map<Class<?>, Set<Field>> trackerFields;
 
     public void add(Throwable throwable, Badness badness) {
         switch (badness) {
@@ -176,19 +178,11 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             return;
         }
         try {
-            for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
-                final World world = ((CraftWorld) bworld).getHandle();
-                this.fieldEntities.set(world, new ArrayList<Entity>((List<Entity>) this.fieldEntities.get(world)));
-                this.fieldPlayers.set(world, new ArrayList<EntityHuman>((List<EntityHuman>) this.fieldPlayers.get(world)));
-                Object o = this.fieldTileEntities.get(world);
-                if (o instanceof List) {
-                    o = new ArrayList<TileEntity>((List<TileEntity>) o);
-                } else {
-                    o = new HashSet<TileEntity>((Set<TileEntity>) o);
-                }
-                this.fieldTileEntities.set(world, o);
-                final EntityTracker tracker = ((WorldServer) world).tracker;
-                this.fieldEntityTrackerSet.set(tracker, new HashSet<EntityTrackerEntry>((Set<EntityTrackerEntry>) this.fieldEntityTrackerSet.get(tracker)));
+            for (final World bworld : this.getServer().getWorlds()) {
+                final Object world = this.methodGetHandle.invoke(bworld);
+                this.unHookCollections(world, this.worldFields);
+                final Object tracker = this.fieldTracker.get(world);
+                this.unHookCollections(tracker, this.trackerFields);
             }
         } catch (final Exception e) {
             this.getLogger().log(Level.SEVERE, "Failed to disable properly. Might want to shut down.", e);
@@ -199,9 +193,9 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     public void onEnable() {
         final String packageName = this.getServer().getClass().getPackage().getName();
         final String version = packageName.substring(packageName.lastIndexOf('.') + 1);
-        final String supports = "${minecraft_version}";
-        if (!version.equals(supports)) {
-            this.getLogger().severe("Incompatible versions. Supports " + supports + ", found " + version);
+        this.supportedVersion = "${minecraft_version}";
+        if (!version.equals(this.supportedVersion)) {
+            this.getLogger().severe("Incompatible versions. Supports " + this.supportedVersion + ", found " + version);
             this.failed = true;
             this.getServer().getPluginManager().disablePlugin(this);
             return;
@@ -234,21 +228,24 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.logger.severe("Could not load custom log. Reverting to server.log");
             e.printStackTrace();
         }
+        this.reflectionConfig = YamlConfiguration.loadConfiguration(this.getResource("reflection.yml"));
         try {
             this.jplLoaders = JavaPluginLoader.class.getDeclaredField("loaders");
             this.jplLoaders.setAccessible(true);
             this.pclClasses = PluginClassLoader.class.getDeclaredField("classes");
             this.pclClasses.setAccessible(true);
-            this.fieldEntities = World.class.getDeclaredField("entityList");
-            this.fieldEntities.setAccessible(true);
-            this.fieldPlayers = World.class.getDeclaredField("players");
-            this.fieldPlayers.setAccessible(true);
-            this.fieldTileEntities = World.class.getDeclaredField("tileEntityList");
-            this.fieldTileEntities.setAccessible(true);
-            this.fieldEntityTrackerSet = EntityTracker.class.getDeclaredField("b");
-            this.fieldEntityTrackerSet.setAccessible(true);
-            for (final org.bukkit.World bworld : this.getServer().getWorlds()) {
-                this.hookWorld(bworld);
+            this.classCraftWorld = Class.forName("org.bukkit.craftbukkit.${minecraft_version}.CraftWorld");
+            this.classWorld = this.getClass("world.nms");
+            final Class<?> classWorldServer = this.getClass("world.server");
+            this.methodGetHandle = this.classCraftWorld.getDeclaredMethod("getHandle");
+            this.worldFields = this.getFieldMap(this.classWorld, this.reflectionConfig.getStringList("world.fields"));
+            this.fieldTracker = classWorldServer.getDeclaredField(this.reflectionConfig.getString("world.tracker.field"));
+
+            final Class<?> classTracker = this.getClass("world.tracker.nms");
+            this.trackerFields = this.getFieldMap(classTracker, this.reflectionConfig.getStringList("world.tracker.fields"));
+
+            for (final World world : this.getServer().getWorlds()) {
+                this.hookWorld(world);
             }
         } catch (final Exception e) {
             this.getLogger().log(Level.SEVERE, "Failed to start up properly. Might want to shut down.", e);
@@ -265,18 +262,60 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         }
     }
 
-    private void hookWorld(org.bukkit.World bworld) throws IllegalArgumentException, IllegalAccessException {
-        final World world = ((CraftWorld) bworld).getHandle();
-        this.fieldEntities.set(world, new OverlyAttachedArrayList<Entity>(this, (List<Entity>) this.fieldEntities.get(world)));
-        this.fieldPlayers.set(world, new OverlyAttachedArrayList<EntityHuman>(this, (List<EntityHuman>) this.fieldPlayers.get(world)));
-        Object o = this.fieldTileEntities.get(world);
-        if (o instanceof List) {
-            o = new OverlyAttachedArrayList<TileEntity>(this, (List<TileEntity>) o);
-        } else {
-            o = new HugSet<TileEntity>(this, (Set<TileEntity>) o);
+    private Class<?> getClass(String path) throws ClassNotFoundException {
+        return Class.forName(this.version(this.reflectionConfig.getString(path)));
+    }
+
+    private Map<Class<?>, Set<Field>> getFieldMap(Class<?> clazz, List<String> fieldNames) throws NoSuchFieldException, SecurityException {
+        final Map<Class<?>, Set<Field>> map = new HashMap<Class<?>, Set<Field>>();
+        map.put(List.class, new HashSet<Field>());
+        map.put(Set.class, new HashSet<Field>());
+        for (final String fieldName : fieldNames) {
+            final Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            if (field.getType().isAssignableFrom(List.class)) {
+                map.get(List.class).add(field);
+            } else if (field.getType().isAssignableFrom(Set.class)) {
+                map.get(Set.class).add(field);
+            }
         }
-        this.fieldTileEntities.set(world, o);
-        final EntityTracker tracker = ((WorldServer) world).tracker;
-        this.fieldEntityTrackerSet.set(tracker, new HugSet<EntityTrackerEntry>(this, (Set<EntityTrackerEntry>) this.fieldEntityTrackerSet.get(tracker)));
+        return map;
+    }
+
+    private void hookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
+        for (final Field field : fields.get(List.class)) {
+            Object o = field.get(object);
+            o = new OverlyAttachedArrayList<Object>(this, (List<Object>) o);
+            field.set(object, o);
+        }
+        for (final Field field : fields.get(Set.class)) {
+            Object o = field.get(object);
+            o = new HugSet<Object>(this, (Set<Object>) o);
+            field.set(object, o);
+        }
+    }
+
+    private void hookWorld(World bworld) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+        final Object world = this.methodGetHandle.invoke(bworld);
+        this.hookCollections(world, this.worldFields);
+        final Object tracker = this.fieldTracker.get(world);
+        this.hookCollections(tracker, this.trackerFields);
+    }
+
+    private void unHookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
+        for (final Field field : fields.get(List.class)) {
+            Object o = field.get(object);
+            o = new ArrayList<Object>((List<Object>) o);
+            field.set(object, o);
+        }
+        for (final Field field : fields.get(Set.class)) {
+            Object o = field.get(object);
+            o = new HashSet<Object>((Set<Object>) o);
+            field.set(object, o);
+        }
+    }
+
+    private String version(String path) {
+        return path.replace("@", this.supportedVersion);
     }
 }

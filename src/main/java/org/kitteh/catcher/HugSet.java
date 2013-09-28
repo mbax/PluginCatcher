@@ -77,7 +77,7 @@ public class HugSet<E> extends HashSet<E> {
     }
 
     private void check(Badness badness) {
-        if (this.plugin != null && !Thread.currentThread().equals(this.thread)) {
+        if ((this.plugin != null) && !Thread.currentThread().equals(this.thread)) {
             this.plugin.add(new Throwable().fillInStackTrace(), badness);
         }
     }
