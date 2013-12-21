@@ -194,7 +194,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         final String packageName = this.getServer().getClass().getPackage().getName();
         final String version = packageName.substring(packageName.lastIndexOf('.') + 1);
         this.reflectionConfig = YamlConfiguration.loadConfiguration(this.getResource("reflection.yml"));
-        this.supportedVersion = reflectionConfig.getString("version");
+        this.supportedVersion = this.reflectionConfig.getString("version");
         if (!version.equals(this.supportedVersion)) {
             this.getLogger().severe("Incompatible versions. Supports " + this.supportedVersion + ", found " + version);
             this.failed = true;
@@ -219,22 +219,26 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         this.logger = Logger.getLogger("PluginCatcher");
         this.getDataFolder().mkdir();
         this.asyncLogFile = new File(this.getDataFolder(), "async.log");
+        String logLocation;
         try {
             final FileHandler handler = new FileHandler(this.asyncLogFile.getAbsolutePath(), true);
             handler.setFormatter(new Frmttr());
             this.logger.addHandler(handler);
             this.logger.setUseParentHandlers(false);
+            File parentFile = this.getDataFolder().getParentFile();
+            logLocation = (parentFile != null ? (parentFile.getName() + "/") : "") + getDataFolder().getName() + "/async.log";
         } catch (final Exception e) {
             this.logger = this.getLogger();
             this.logger.severe("Could not load custom log. Reverting to server.log");
             e.printStackTrace();
+            logLocation = "your server's log file";
         }
         try {
             this.jplLoaders = JavaPluginLoader.class.getDeclaredField("loaders");
             this.jplLoaders.setAccessible(true);
             this.pclClasses = PluginClassLoader.class.getDeclaredField("classes");
             this.pclClasses.setAccessible(true);
-            this.classCraftWorld = Class.forName("org.bukkit.craftbukkit.${minecraft_version}.CraftWorld");
+            this.classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
             this.classWorld = this.getClass("world.nms");
             final Class<?> classWorldServer = this.getClass("world.server");
             this.methodGetHandle = this.classCraftWorld.getDeclaredMethod("getHandle");
@@ -251,6 +255,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.getLogger().log(Level.SEVERE, "Failed to start up properly. Might want to shut down.", e);
         }
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Output(), 20, 20);
+        this.getLogger().info("If something goes wrong, I'll log it to " + logLocation);
     }
 
     @EventHandler

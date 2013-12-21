@@ -1,4 +1,4 @@
-version: ${minecraft_version}
+version: v1_7_R1
 world:
   nms: net.minecraft.server.@.World
   fields: [entityList, players, tileEntityList]
@@ -6,5 +6,4 @@ world:
   tracker:
     field: tracker
     nms: net.minecraft.server.@.EntityTracker
-    fields: [b]
-    
+    fields: [c]

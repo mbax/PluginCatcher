@@ -4,12 +4,11 @@
   <groupId>org.kitteh</groupId>
   <artifactId>plugincatcher</artifactId>
   <packaging>jar</packaging>
-  <version>1.6.4</version>
+  <version>1.7.0</version>
   <name>PluginCatcher</name>
   <url>http://kitteh.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <minecraft_version>v1_6_R3</minecraft_version>
   </properties>
 
   <repositories>
@@ -23,20 +22,20 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.6.4-R0.1-SNAPSHOT</version>
+      <version>1.7.2-R0.1-SNAPSHOT</version>
       <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <finalName>plugincatcher</finalName>
-    <sourceDirectory>${basedir}/target/filtered-sources/java</sourceDirectory>
     <resources>
-      <resource>
-        <directory>${basedir}/src/main/java</directory>
-        <filtering>true</filtering>
-        <targetPath>${basedir}/target/filtered-sources/java</targetPath>
-      </resource>
       <resource>
         <targetPath>.</targetPath>
         <filtering>true</filtering>
@@ -55,6 +54,11 @@
         </includes>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+        <directory>>${basedir}/src/main/resources</directory>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>com.mycila.maven-license-plugin</groupId>
