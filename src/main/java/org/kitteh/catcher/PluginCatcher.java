@@ -42,8 +42,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.java.JavaPluginLoader;
-import org.bukkit.plugin.java.PluginClassLoader;
 
 @SuppressWarnings("unchecked")
 public class PluginCatcher extends JavaPlugin implements Listener {
@@ -77,19 +75,8 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     }
 
     private class Output implements Runnable {
-        private Map<String, PluginClassLoader> loaders;
-
         @Override
         public void run() {
-            try {
-                this.loaders = (Map<String, PluginClassLoader>) PluginCatcher.this.jplLoaders.get(PluginCatcher.this.getPluginLoader());
-            } catch (final IllegalArgumentException e) {
-                e.printStackTrace();
-                return;
-            } catch (final IllegalAccessException e) {
-                e.printStackTrace();
-                return;
-            }
             boolean found = false;
             while (!PluginCatcher.this.badList.isEmpty()) {
                 found = true;
@@ -106,23 +93,16 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             }
         }
 
-        private void log(Throwable t, String desc) {
+        private void log(Throwable throwable, String desc) {
             final Set<String> set = new HashSet<String>();
-            for (final String plugin : this.loaders.keySet()) {
-                if (plugin.equals(PluginCatcher.this.thisName)) {
-                    continue;
-                }
-                final PluginClassLoader loader = this.loaders.get(plugin);
-                Map<String, Class<?>> classes;
+            for (final StackTraceElement element : throwable.getStackTrace()) {
                 try {
-                    classes = (Map<String, Class<?>>) PluginCatcher.this.pclClasses.get(loader);
-                } catch (final Exception e) {
-                    return;
-                }
-                for (final StackTraceElement e : t.getStackTrace()) {
-                    if (classes.containsKey(e.getClassName())) {
-                        set.add(plugin);
+                    final JavaPlugin plugin = JavaPlugin.getProvidingPlugin(element.getClass());
+                    if (!plugin.getName().equals(PluginCatcher.this.getName())) {
+                        set.add(plugin.getName());
                     }
+                } catch (final Exception e) {
+                    continue;
                 }
             }
             String message;
@@ -137,14 +117,11 @@ public class PluginCatcher extends JavaPlugin implements Listener {
                 }
                 message = builder.toString();
             }
-            PluginCatcher.this.logger.log(Level.WARNING, message, t);
+            PluginCatcher.this.logger.log(Level.WARNING, message, throwable);
         }
     }
 
     private boolean failed = false;
-    private String thisName;
-    private Field jplLoaders;
-    private Field pclClasses;
     private Logger logger;
     private File asyncLogFile;
     private final List<Throwable> riskyList = Collections.synchronizedList(new ArrayList<Throwable>());
@@ -215,7 +192,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         }
         this.getServer().getPluginManager().registerEvents(this, this);
         this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
-        this.thisName = this.getDescription().getName();
         this.logger = Logger.getLogger("PluginCatcher");
         this.getDataFolder().mkdir();
         this.asyncLogFile = new File(this.getDataFolder(), "async.log");
@@ -225,8 +201,8 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             handler.setFormatter(new Frmttr());
             this.logger.addHandler(handler);
             this.logger.setUseParentHandlers(false);
-            File parentFile = this.getDataFolder().getParentFile();
-            logLocation = (parentFile != null ? (parentFile.getName() + "/") : "") + getDataFolder().getName() + "/async.log";
+            final File parentFile = this.getDataFolder().getParentFile();
+            logLocation = (parentFile != null ? (parentFile.getName() + "/") : "") + this.getDataFolder().getName() + "/async.log";
         } catch (final Exception e) {
             this.logger = this.getLogger();
             this.logger.severe("Could not load custom log. Reverting to server.log");
@@ -234,10 +210,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             logLocation = "your server's log file";
         }
         try {
-            this.jplLoaders = JavaPluginLoader.class.getDeclaredField("loaders");
-            this.jplLoaders.setAccessible(true);
-            this.pclClasses = PluginClassLoader.class.getDeclaredField("classes");
-            this.pclClasses.setAccessible(true);
             this.classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
             this.classWorld = this.getClass("world.nms");
             final Class<?> classWorldServer = this.getClass("world.server");

@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPluginLoader;
-import org.bukkit.plugin.java.PluginClassLoader;
 import org.junit.Test;
 
 public final class ReflectionTest {
@@ -28,24 +26,6 @@ public final class ReflectionTest {
         try {
             final Class<?> classWorld = this.getClass("world.nms");
             this.getFieldMap(classWorld, this.reflectionConfig.getStringList("world.fields"));
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage());
-        }
-    }
-
-    @Test
-    public void pluginLoaderClasses() {
-        try {
-            PluginClassLoader.class.getDeclaredField("classes");
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage());
-        }
-    }
-
-    @Test
-    public void pluginLoaderLoaders() {
-        try {
-            JavaPluginLoader.class.getDeclaredField("loaders");
         } catch (final Exception e) {
             throw new AssertionError(e.getMessage());
         }
