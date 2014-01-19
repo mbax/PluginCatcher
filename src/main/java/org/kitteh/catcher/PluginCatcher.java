@@ -43,7 +43,6 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-@SuppressWarnings("unchecked")
 public class PluginCatcher extends JavaPlugin implements Listener {
     public enum Badness {
         VERY_BAD,
@@ -261,14 +260,16 @@ public class PluginCatcher extends JavaPlugin implements Listener {
 
     private void hookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
         for (final Field field : fields.get(List.class)) {
-            Object o = field.get(object);
-            o = new OverlyAttachedArrayList<Object>(this, (List<Object>) o);
-            field.set(object, o);
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>) field.get(object);
+            list = new OverlyAttachedArrayList<Object>(this, list);
+            field.set(object, list);
         }
         for (final Field field : fields.get(Set.class)) {
-            Object o = field.get(object);
-            o = new HugSet<Object>(this, (Set<Object>) o);
-            field.set(object, o);
+            @SuppressWarnings("unchecked")
+            Set<Object> set = (Set<Object>) field.get(object);
+            set = new HugSet<Object>(this, set);
+            field.set(object, set);
         }
     }
 
@@ -281,14 +282,16 @@ public class PluginCatcher extends JavaPlugin implements Listener {
 
     private void unHookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
         for (final Field field : fields.get(List.class)) {
-            Object o = field.get(object);
-            o = new ArrayList<Object>((List<Object>) o);
-            field.set(object, o);
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>) field.get(object);
+            list = new ArrayList<Object>(list);
+            field.set(object, list);
         }
         for (final Field field : fields.get(Set.class)) {
-            Object o = field.get(object);
-            o = new HashSet<Object>((Set<Object>) o);
-            field.set(object, o);
+            @SuppressWarnings("unchecked")
+            Set<Object> set = (Set<Object>) field.get(object);
+            set = new HashSet<Object>(set);
+            field.set(object, set);
         }
     }
 
