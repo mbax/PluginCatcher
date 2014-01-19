@@ -132,20 +132,11 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     private YamlConfiguration reflectionConfig;
     private CharSequence supportedVersion;
     private Field fieldTracker;
-
     private Map<Class<?>, Set<Field>> worldFields;
-
     private Map<Class<?>, Set<Field>> trackerFields;
 
     public void add(Throwable throwable, Badness badness) {
-        switch (badness) {
-            case VERY_BAD:
-                this.badList.add(throwable);
-                break;
-            default:
-                this.riskyList.add(throwable);
-                break;
-        }
+        (badness == Badness.VERY_BAD ? this.badList : this.riskyList).add(throwable);
     }
 
     @Override
@@ -177,8 +168,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        final File file = new File(this.getDataFolder(), "config.yml");
-        if (!file.exists()) {
+        if (!new File(this.getDataFolder(), "config.yml").exists()) {
             this.saveDefaultConfig();
         }
         if (this.getConfig().getBoolean("meow", true)) {
@@ -211,13 +201,10 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         try {
             this.classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
             this.classWorld = this.getClass("world.nms");
-            final Class<?> classWorldServer = this.getClass("world.server");
             this.methodGetHandle = this.classCraftWorld.getDeclaredMethod("getHandle");
             this.worldFields = this.getFieldMap(this.classWorld, this.reflectionConfig.getStringList("world.fields"));
-            this.fieldTracker = classWorldServer.getDeclaredField(this.reflectionConfig.getString("world.tracker.field"));
-
-            final Class<?> classTracker = this.getClass("world.tracker.nms");
-            this.trackerFields = this.getFieldMap(classTracker, this.reflectionConfig.getStringList("world.tracker.fields"));
+            this.fieldTracker = this.getClass("world.server").getDeclaredField(this.reflectionConfig.getString("world.tracker.field"));
+            this.trackerFields = this.getFieldMap(this.getClass("world.tracker.nms"), this.reflectionConfig.getStringList("world.tracker.fields"));
 
             for (final World world : this.getServer().getWorlds()) {
                 this.hookWorld(world);
@@ -261,37 +248,32 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     private void hookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
         for (final Field field : fields.get(List.class)) {
             @SuppressWarnings("unchecked")
-            List<Object> list = (List<Object>) field.get(object);
-            list = new OverlyAttachedArrayList<Object>(this, list);
-            field.set(object, list);
+            final List<Object> list = (List<Object>) field.get(object);
+            field.set(object, new OverlyAttachedArrayList<Object>(this, list));
         }
         for (final Field field : fields.get(Set.class)) {
             @SuppressWarnings("unchecked")
-            Set<Object> set = (Set<Object>) field.get(object);
-            set = new HugSet<Object>(this, set);
-            field.set(object, set);
+            final Set<Object> set = (Set<Object>) field.get(object);
+            field.set(object, new HugSet<Object>(this, set));
         }
     }
 
     private void hookWorld(World bworld) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         final Object world = this.methodGetHandle.invoke(bworld);
         this.hookCollections(world, this.worldFields);
-        final Object tracker = this.fieldTracker.get(world);
-        this.hookCollections(tracker, this.trackerFields);
+        this.hookCollections(this.fieldTracker.get(world), this.trackerFields);
     }
 
     private void unHookCollections(Object object, Map<Class<?>, Set<Field>> fields) throws IllegalArgumentException, IllegalAccessException {
         for (final Field field : fields.get(List.class)) {
             @SuppressWarnings("unchecked")
-            List<Object> list = (List<Object>) field.get(object);
-            list = new ArrayList<Object>(list);
-            field.set(object, list);
+            final List<Object> list = (List<Object>) field.get(object);
+            field.set(object, new ArrayList<Object>(list));
         }
         for (final Field field : fields.get(Set.class)) {
             @SuppressWarnings("unchecked")
-            Set<Object> set = (Set<Object>) field.get(object);
-            set = new HashSet<Object>(set);
-            field.set(object, set);
+            final Set<Object> set = (Set<Object>) field.get(object);
+            field.set(object, new HashSet<Object>(set));
         }
     }
 
