@@ -44,11 +44,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PluginCatcher extends JavaPlugin implements Listener {
-    public enum Badness {
-        VERY_BAD,
-        RISKY;
-    }
-
     private class Frmttr extends java.util.logging.Formatter {
         SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -118,6 +113,11 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             }
             PluginCatcher.this.logger.log(Level.WARNING, message, throwable);
         }
+    }
+
+    enum Badness {
+        VERY_BAD,
+        RISKY;
     }
 
     private boolean failed = false;
