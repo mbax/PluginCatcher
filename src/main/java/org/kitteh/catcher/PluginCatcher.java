@@ -155,19 +155,23 @@ public class PluginCatcher extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        final String packageName = this.getServer().getClass().getPackage().getName();
-        final String version = packageName.substring(packageName.lastIndexOf('.') + 1);
+        if (!new File(this.getDataFolder(), "config.yml").exists()) {
+            this.saveDefaultConfig();
+        }
+        this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
+
         this.reflectionConfig = YamlConfiguration.loadConfiguration(this.getResource("reflection.yml"));
         this.supportedVersion = this.reflectionConfig.getString("version");
+
+        final String packageName = this.getServer().getClass().getPackage().getName();
+        final String version = packageName.substring(packageName.lastIndexOf('.') + 1);
         if (!version.equals(this.supportedVersion)) {
             this.getLogger().severe("Incompatible versions. Supports " + this.supportedVersion + ", found " + version);
             this.failed = true;
             this.getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        if (!new File(this.getDataFolder(), "config.yml").exists()) {
-            this.saveDefaultConfig();
-        }
+
         if (this.getConfig().getBoolean("meow", true)) {
             this.getLogger().info("             |\\__/,|   (`\\");
             this.getLogger().info("             |o o  |__ _) )");
@@ -176,8 +180,9 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             this.getLogger().info(" <\" _ }=- `` `-'(((/  (((/");
             this.getLogger().info("  `\" \"");
         }
+
         this.getServer().getPluginManager().registerEvents(this, this);
-        this.onlyDangerous = this.getConfig().getBoolean("onlydangerous", true);
+
         this.logger = Logger.getLogger("PluginCatcher");
         this.getDataFolder().mkdir();
         this.asyncLogFile = new File(this.getDataFolder(), "async.log");
@@ -195,6 +200,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             e.printStackTrace();
             logLocation = "your server's log file";
         }
+
         try {
             Class<?> classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
             Class<?> classWorld = this.getClass("world.nms");
@@ -209,7 +215,9 @@ public class PluginCatcher extends JavaPlugin implements Listener {
         } catch (final Exception e) {
             this.getLogger().log(Level.SEVERE, "Failed to start up properly. Might want to shut down.", e);
         }
+
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Output(), 20, 20);
+
         this.getLogger().info("If something goes wrong, I'll log it to " + logLocation);
     }
 

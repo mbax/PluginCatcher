@@ -33,9 +33,8 @@ public final class ReflectionTest {
 
     @Test
     public void tracker() {
-        Class<?> classTracker;
         try {
-            classTracker = this.getClass("world.tracker.nms");
+            Class<?> classTracker = this.getClass("world.tracker.nms");
             this.getFieldMap(classTracker, this.reflectionConfig.getStringList("world.tracker.fields"));
         } catch (final Exception e) {
             e.printStackTrace();
@@ -45,9 +44,8 @@ public final class ReflectionTest {
 
     @Test
     public void worldServer() {
-        Class<?> classWorldServer;
         try {
-            classWorldServer = this.getClass("world.server");
+            Class<?> classWorldServer = this.getClass("world.server");
             classWorldServer.getDeclaredField(this.reflectionConfig.getString("world.tracker.field"));
         } catch (final Exception e) {
             throw new AssertionError(e.getMessage());
