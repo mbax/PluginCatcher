@@ -15,15 +15,15 @@
  */
 package org.kitteh.catcher;
 
+import org.kitteh.catcher.PluginCatcher.Badness;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.kitteh.catcher.PluginCatcher.Badness;
-
-public class OverlyAttachedArrayList<E> extends ArrayList<E> {
+final class OverlyAttachedArrayList<E> extends ArrayList<E> {
     private class OverlyAttachedIterator implements Iterator<E> {
         private final Iterator<E> iterator;
 

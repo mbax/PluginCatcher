@@ -1,14 +1,14 @@
 package org.kitteh.catcher;
 
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.junit.Test;
+
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.junit.Test;
-
 public final class ReflectionTest {
-    private final YamlConfiguration reflectionConfig = YamlConfiguration.loadConfiguration(this.getClass().getClassLoader().getResourceAsStream("reflection.yml"));;
+    private final YamlConfiguration reflectionConfig = YamlConfiguration.loadConfiguration(this.getClass().getClassLoader().getResourceAsStream("reflection.yml"));
     private final String supportedVersion = this.reflectionConfig.getString("version");
 
     @Test

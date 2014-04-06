@@ -15,6 +15,14 @@
  */
 package org.kitteh.catcher;
 
+import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -35,17 +43,9 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import org.bukkit.World;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
-
 public class PluginCatcher extends JavaPlugin implements Listener {
     private class Frmttr extends java.util.logging.Formatter {
-        SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        final SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         @Override
         public String format(LogRecord record) {
@@ -96,7 +96,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
                         set.add(plugin.getName());
                     }
                 } catch (final Exception e) {
-                    continue;
                 }
             }
             String message;
@@ -104,7 +103,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
                 message = "Found an async call I can't trace";
             } else {
                 final StringBuilder builder = new StringBuilder();
-                builder.append("Found " + desc + " async call. Might be from: ");
+                builder.append("Found ").append(desc).append(" async call. Might be from: ");
                 for (final String plugin : set) {
                     final Plugin p = PluginCatcher.this.getServer().getPluginManager().getPlugin(plugin);
                     builder.append(plugin).append(" ").append(p.getDescription().getVersion()).append(" ");
@@ -117,7 +116,7 @@ public class PluginCatcher extends JavaPlugin implements Listener {
 
     enum Badness {
         VERY_BAD,
-        RISKY;
+        RISKY
     }
 
     private boolean failed = false;
@@ -126,8 +125,6 @@ public class PluginCatcher extends JavaPlugin implements Listener {
     private final List<Throwable> riskyList = Collections.synchronizedList(new ArrayList<Throwable>());
     private final List<Throwable> badList = Collections.synchronizedList(new ArrayList<Throwable>());
     private boolean onlyDangerous;
-    private Class<?> classCraftWorld;
-    private Class<?> classWorld;
     private Method methodGetHandle;
     private YamlConfiguration reflectionConfig;
     private CharSequence supportedVersion;
@@ -199,10 +196,10 @@ public class PluginCatcher extends JavaPlugin implements Listener {
             logLocation = "your server's log file";
         }
         try {
-            this.classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
-            this.classWorld = this.getClass("world.nms");
-            this.methodGetHandle = this.classCraftWorld.getDeclaredMethod("getHandle");
-            this.worldFields = this.getFieldMap(this.classWorld, this.reflectionConfig.getStringList("world.fields"));
+            Class<?> classCraftWorld = Class.forName("org.bukkit.craftbukkit." + this.supportedVersion + ".CraftWorld");
+            Class<?> classWorld = this.getClass("world.nms");
+            this.methodGetHandle = classCraftWorld.getDeclaredMethod("getHandle");
+            this.worldFields = this.getFieldMap(classWorld, this.reflectionConfig.getStringList("world.fields"));
             this.fieldTracker = this.getClass("world.server").getDeclaredField(this.reflectionConfig.getString("world.tracker.field"));
             this.trackerFields = this.getFieldMap(this.getClass("world.tracker.nms"), this.reflectionConfig.getStringList("world.tracker.fields"));
 

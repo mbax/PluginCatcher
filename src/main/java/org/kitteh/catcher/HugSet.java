@@ -15,13 +15,13 @@
  */
 package org.kitteh.catcher;
 
+import org.kitteh.catcher.PluginCatcher.Badness;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.kitteh.catcher.PluginCatcher.Badness;
-
-public class HugSet<E> extends HashSet<E> {
+final class HugSet<E> extends HashSet<E> {
     private class OverlyAttachedIterator implements Iterator<E> {
         private final Iterator<E> iterator;
 
