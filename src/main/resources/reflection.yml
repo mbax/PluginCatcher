@@ -1,4 +1,4 @@
-version: v1_7_R1
+version: v1_7_R2
 world:
   nms: net.minecraft.server.@.World
   fields: [entityList, players, tileEntityList]
