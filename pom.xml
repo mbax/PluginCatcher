@@ -4,7 +4,7 @@
   <groupId>org.kitteh</groupId>
   <artifactId>plugincatcher</artifactId>
   <packaging>jar</packaging>
-  <version>1.7.5-SNAPSHOT</version>
+  <version>1.7.5</version>
   <name>PluginCatcher</name>
   <url>http://kitteh.org</url>
   <properties>
